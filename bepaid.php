@@ -348,25 +348,25 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
         global $tc;
 
         $total = $_REQUEST['total'];
-
+           var_dump('order_confirmation');
         $hashSecretWord = $this->get_option('secret_word', '', 'bepaid'); //2Checkout Secret Word
         $hashSid = $this->get_option('sid', '', 'bepaid');
         $hashTotal = $total; //Sale total to validate against
         $hashOrder = $_REQUEST['order_number']; //2Checkout Order Number
 
-        if ($this->SandboxFlag == 'sandbox') {
-            $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . 1 . $hashTotal));
-        } else {
-            $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . $hashOrder . $hashTotal));
-        }
+        // if ($this->SandboxFlag == 'sandbox') {
+            // $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . 1 . $hashTotal));
+        // } else {
+            // $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . $hashOrder . $hashTotal));
+        // }
 
-        if ($StringToHash != $_REQUEST['key']) {
-            $tc->update_order_status($order->ID, 'order_fraud');
-        } else {
-            $paid = true;
-            $order = tc_get_order_id_by_name($order);
-            $tc->update_order_payment_status($order->ID, true);
-        }
+        // if ($StringToHash != $_REQUEST['key']) {
+            // $tc->update_order_status($order->ID, 'order_fraud');
+        // } else {
+            // $paid = true;
+            // $order = tc_get_order_id_by_name($order);
+            // $tc->update_order_payment_status($order->ID, true);
+        // }
 
         $this->ipn();
     }
@@ -423,8 +423,8 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
     function ipn() {
         global $tc;
          
-
-          // print_r($query_response);
+           var_dump('ipn');
+           
 		 
        // if (isset($_REQUEST['message_type']) && $_REQUEST['message_type'] == 'INVOICE_STATUS_CHANGED') {
 		   if (isset($_REQUEST['uid'])) {
