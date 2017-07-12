@@ -362,7 +362,18 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
         $hashSid = $this->get_option('sid', '', 'bepaid');
         $hashTotal = $total; //Sale total to validate against
         $hashOrder = $_REQUEST['order_number']; //2Checkout Order Number
-         var_dump('hashSecretWord'.$hashSecretWord );
+		
+		if (!class_exists('beGateway')) {
+			require_once dirname(  __FILE__  ) . '/lib/beGateway.php';
+		}
+
+       //  var_dump('hashSecretWord'.$hashSecretWord );
+		 $query = new \beGateway\QueryByToken;
+		 $query->setToken($_REQUEST['token']);
+
+		$query_response = $query->submit();
+
+		var_dump($query_response);
         if ($this->SandboxFlag == 'sandbox') {
             $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . 1 . $hashTotal));
         } else {
