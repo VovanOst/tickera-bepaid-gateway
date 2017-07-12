@@ -278,7 +278,7 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 
 		if (empty($erip_service_no))
 			$erip_service_no = $bgt_settings['erip_service_no'] ? $bgt_settings['erip_service_no'] : '';
-           var_dump('shop_id:'.$shop_id.';shop_key:'.$shop_key.';amount:'.$amount);
+          // var_dump('shop_id:'.$shop_id.';shop_key:'.$shop_key.';amount:'.$amount);
 		   //'\lib\beGateway\lib\beGateway.php');
 		if (!class_exists('beGateway')) {
 			require_once dirname(  __FILE__  ) . '/lib/beGateway.php';
@@ -295,14 +295,15 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 		$transaction->setLanguage($lang);
 		
 		$transaction->setTrackingId($order_id);//$order_id 
+		var_dump($tc->get_confirmation_slug(true, $order_id));
 
 		if ($notification_url)
 			$transaction->setNotificationUrl($notification_url);
 
-		$transaction->setSuccessUrl($success_url);
-		$transaction->setDeclineUrl($decline_url);
-		$transaction->setFailUrl($fail_url);
-		$transaction->setCancelUrl($cancel_url);
+		$transaction->setSuccessUrl($tc->get_confirmation_slug(true, $order_id));
+		$transaction->setDeclineUrl($tc->get_confirmation_slug(true, $order_id));
+		$transaction->setFailUrl($tc->get_confirmation_slug(true, $order_id));
+		$transaction->setCancelUrl($tc->get_confirmation_slug(true, $order_id));
 		//var_dump($shop_id.'-'.$shop_key.'-'.$order_id);
 		if (!isset($bgt_settings['personal_details']))
 			$transaction->setAddressHidden();
@@ -322,6 +323,8 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 		));
 		$transaction->addPaymentMethod($erip);
 		}
+		
+		
 		$response = $transaction->submit();
 
 		if ($response->isSuccess() ) {
@@ -329,14 +332,14 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 				//'message' => $response->getMessage(),
 				//'status' => 'ok',
 				//'token' => $response->getToken(),
-			//'gourl' => $response->getRedirectUrl()
-			$paid = false;
+			//'gourl' => $response->getRedirectUrl()			
+		));
+		   $paid = false;
 
            $payment_info = $this->save_payment_info();
 
            $tc->create_order($order_id, $this->cart_contents(), $this->cart_info(), $payment_info, $paid);
-		));
-		@wp_redirect($response->getRedirectUrl());
+		 @wp_redirect($response->getRedirectUrl());
 		 tc_js_redirect($response->getRedirectUrl());
         exit(0);
 		} else {
@@ -353,25 +356,26 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
         global $tc;
 
         $total = $_REQUEST['total'];
-           var_dump('order_confirmation');
+          // var_dump('order_confirmation');
+		  // var_dump('total'.$total);
         $hashSecretWord = $this->get_option('secret_word', '', 'bepaid'); //2Checkout Secret Word
         $hashSid = $this->get_option('sid', '', 'bepaid');
         $hashTotal = $total; //Sale total to validate against
         $hashOrder = $_REQUEST['order_number']; //2Checkout Order Number
+         var_dump('hashSecretWord'.$hashSecretWord );
+        if ($this->SandboxFlag == 'sandbox') {
+            $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . 1 . $hashTotal));
+        } else {
+            $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . $hashOrder . $hashTotal));
+        }
 
-        // if ($this->SandboxFlag == 'sandbox') {
-            // $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . 1 . $hashTotal));
-        // } else {
-            // $StringToHash = strtoupper(md5($hashSecretWord . $hashSid . $hashOrder . $hashTotal));
-        // }
-
-        // if ($StringToHash != $_REQUEST['key']) {
-            // $tc->update_order_status($order->ID, 'order_fraud');
-        // } else {
-            // $paid = true;
-            // $order = tc_get_order_id_by_name($order);
-            // $tc->update_order_payment_status($order->ID, true);
-        // }
+        if ($StringToHash != $_REQUEST['key']) {
+            $tc->update_order_status($order->ID, 'order_fraud');
+        } else {
+            $paid = true;
+            $order = tc_get_order_id_by_name($order);
+            $tc->update_order_payment_status($order->ID, true);
+        }
 
         $this->ipn();
     }
@@ -428,11 +432,12 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
     function ipn() {
         global $tc;
          
-           var_dump('ipn');
+           
            
 		 
        // if (isset($_REQUEST['message_type']) && $_REQUEST['message_type'] == 'INVOICE_STATUS_CHANGED') {
 		   if (isset($_REQUEST['uid'])) {
+			   //var_dump('ipn1'.$_REQUEST['vendor_order_id']);
             // $sale_id = $_REQUEST['sale_id']; //just for calculating hash
             // $tco_vendor_order_id = $_REQUEST['vendor_order_id']; //order "name"
             // $total = $_REQUEST['invoice_list_amount'];
@@ -447,11 +452,23 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
               //$query_response = $query->submit();
 
               //print_r($query_response);
-			 $query = new \beGateway\QueryByUid;
-             $query->setUid($_REQUEST['uid']);
+			  if (!class_exists('beGateway')) {
+					require_once dirname(  __FILE__  ) . '/lib/beGateway.php';
+				}
+				
+				$query = new \beGateway\QueryByUid;
+				//\beGateway\Settings::$shopId  = $bgt_settings['shop_id'];
+				//\beGateway\Settings::$shopKey = $bgt_settings['shop_key'];
+				//\beGateway\Settings::$checkoutBase = 'https://' . $checkout_base;
+				\beGateway\Settings::$shopId = 361;
+				\beGateway\Settings::$shopKey = 'b8647b68898b084b836474ed8d61ffe117c9a01168d867f24953b776ddcb134d';
+				$query->setUid($_REQUEST['uid']);
+             
 
              $query_response = $query->submit();
-			 if ($query_response->isSuccess()  ) { //|| $response->isFailed()
+			 var_dump(intval($query_response->getAmount()));
+			 //print_r($query_response->);
+			 if ($query_response->isSuccess()) { //|| $response->isFailed()
                //print("Transaction UID: " . $response->getUid() . PHP_EOL);
 		         $order_id = tc_get_order_id_by_name($query_response->getTrackingId());
 		         $order_id = $order_id->ID;
@@ -468,22 +485,22 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
             //$hash = md5($sale_id . $this->get_option('sid', '', 'bepaid') . $_REQUEST['invoice_id'] . $this->get_option('sid', 'secret_word', 'bepaid'));
 
            // if ($_REQUEST['md5_hash'] != strtolower($hash)) {
-			  if ($_REQUEST['token'] != $query_response->getToken()) {
+			  // if ($_REQUEST['token'] != $query_response->getToken()) {
 			   
-                header('HTTP/1.0 403 Forbidden');
-                header('Content-type: text/plain; charset=UTF-8');
-                echo "bePaid token doesn't match";
-                exit;
-            }
+                // header('HTTP/1.0 403 Forbidden');
+                // header('Content-type: text/plain; charset=UTF-8');
+                // echo "bePaid token doesn't match";
+                // exit;
+            // }
 
-            if (strtolower($_REQUEST['invoice_status']) != "deposited") {
-                header('HTTP/1.0 200 OK');
-                header('Content-type: text/plain; charset=UTF-8');
-                echo 'Waiting for deposited invoice status.';
-                exit;
-            }
+            // if (strtolower($_REQUEST['invoice_status']) != "deposited") {
+                // header('HTTP/1.0 200 OK');
+                // header('Content-type: text/plain; charset=UTF-8');
+                // echo 'Waiting for deposited invoice status.';
+                // exit;
+            // }
 
-            if (intval(round($total, 2)) >= round($order->details->tc_payment_info['total'], 2)) {
+            if (intval(round($query_response->getAmount(), 2)) >= round($order->details->tc_payment_info['total'], 2)) {
                 $tc->update_order_payment_status($order_id, true);
                 header('HTTP/1.0 200 OK');
                 header('Content-type: text/plain; charset=UTF-8');

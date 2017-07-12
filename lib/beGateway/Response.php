@@ -58,6 +58,14 @@ class Response extends ResponseBase {
       return false;
     }
   }
+  
+   public function getAmount() {
+    if ($this->hasTransactionSection()) {
+      return $this->getResponse()->transaction->amount;
+    }else{
+      return false;
+    }
+  }
 
   public function hasTransactionSection() {
     return (is_object($this->getResponse()) && isset($this->getResponse()->transaction));
