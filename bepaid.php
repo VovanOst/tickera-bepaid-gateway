@@ -330,6 +330,11 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 				//'status' => 'ok',
 				//'token' => $response->getToken(),
 			//'gourl' => $response->getRedirectUrl()
+			$paid = false;
+
+           $payment_info = $this->save_payment_info();
+
+           $tc->create_order($order_id, $this->cart_contents(), $this->cart_info(), $payment_info, $paid);
 		));
 		@wp_redirect($response->getRedirectUrl());
 		 tc_js_redirect($response->getRedirectUrl());
