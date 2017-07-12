@@ -422,16 +422,36 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 
     function ipn() {
         global $tc;
-         var_dump($_POST);  
-		 
-        if (isset($_REQUEST['message_type']) && $_REQUEST['message_type'] == 'INVOICE_STATUS_CHANGED') {
-            $sale_id = $_REQUEST['sale_id']; //just for calculating hash
-            $tco_vendor_order_id = $_REQUEST['vendor_order_id']; //order "name"
-            $total = $_REQUEST['invoice_list_amount'];
+         
 
-            $order_id = tc_get_order_id_by_name($tco_vendor_order_id); //get order id from order name
-            $order_id = $order_id->ID;
-            $order = new TC_Order($order_id);
+          // print_r($query_response);
+		 
+       // if (isset($_REQUEST['message_type']) && $_REQUEST['message_type'] == 'INVOICE_STATUS_CHANGED') {
+		   if (isset($_REQUEST['uid'])) {
+            // $sale_id = $_REQUEST['sale_id']; //just for calculating hash
+            // $tco_vendor_order_id = $_REQUEST['vendor_order_id']; //order "name"
+            // $total = $_REQUEST['invoice_list_amount'];
+
+            // $order_id = tc_get_order_id_by_name($tco_vendor_order_id); //get order id from order name
+            // $order_id = $order_id->ID;
+            // $order = new TC_Order($order_id);
+			
+			  //$query = new \beGateway\QueryByUid;
+              //$query->setUid($response->getUid());
+
+              //$query_response = $query->submit();
+
+              //print_r($query_response);
+			 $query = new \beGateway\QueryByUid;
+             $query->setUid($_REQUEST['uid']);
+
+             $query_response = $query->submit();
+			 if ($query_response->isSuccess()  ) { //|| $response->isFailed()
+               //print("Transaction UID: " . $response->getUid() . PHP_EOL);
+		         $order_id = tc_get_order_id_by_name($query_response->getTrackingId());
+		         $order_id = $order_id->ID;
+				 $order = new TC_Order($order_id);
+				}
 
             if (!$order) {
                 header('HTTP/1.0 404 Not Found');
@@ -440,12 +460,14 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
                 exit;
             }
 
-            $hash = md5($sale_id . $this->get_option('sid', '', 'bepaid') . $_REQUEST['invoice_id'] . $this->get_option('sid', 'secret_word', 'bepaid'));
+            //$hash = md5($sale_id . $this->get_option('sid', '', 'bepaid') . $_REQUEST['invoice_id'] . $this->get_option('sid', 'secret_word', 'bepaid'));
 
-            if ($_REQUEST['md5_hash'] != strtolower($hash)) {
+           // if ($_REQUEST['md5_hash'] != strtolower($hash)) {
+			  if ($_REQUEST['token'] != $query_response->getToken()) {
+			   
                 header('HTTP/1.0 403 Forbidden');
                 header('Content-type: text/plain; charset=UTF-8');
-                echo "2Checkout hash key doesn't match";
+                echo "bePaid token doesn't match";
                 exit;
             }
 
