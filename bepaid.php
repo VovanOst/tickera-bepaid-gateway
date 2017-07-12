@@ -278,7 +278,7 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 
 		if (empty($erip_service_no))
 			$erip_service_no = $bgt_settings['erip_service_no'] ? $bgt_settings['erip_service_no'] : '';
-          // var_dump('shop_id:'.$shop_id.';shop_key:'.$shop_key.';amount:'.$amount);
+           var_dump('shop_id:'.$shop_id.';shop_key:'.$shop_key.';amount:'.$amount);
 		   //'\lib\beGateway\lib\beGateway.php');
 		if (!class_exists('beGateway')) {
 			require_once dirname(  __FILE__  ) . '/lib/beGateway.php';
