@@ -471,7 +471,7 @@ function bt_begateway_go()
       if ($webhook->isAuthorized()) {
         //log
         if ( "yes" == $this->debug ){
-          $display="\n-------------------------------------------\n";
+          $display="\n-----------------isAutorize--------------------------\n";
           $display.= "Order No: ".$webhook->getTrackingId();
           $display.= "\nUID: ".$webhook->getUid();
           $display.="\n--------------------------------------------\n";

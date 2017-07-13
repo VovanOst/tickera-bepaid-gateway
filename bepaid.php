@@ -244,6 +244,8 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 
 		\beGateway\Settings::$shopId  = $shop_id;
 		\beGateway\Settings::$shopKey = $shop_key;
+		 //\beGateway\Settings::$shopId = 361;
+	     //\beGateway\Settings::$shopKey = 'b8647b68898b084b836474ed8d61ffe117c9a01168d867f24953b776ddcb134d';
 		\beGateway\Settings::$checkoutBase = 'https://' . $checkout_base;
          
 		$transaction = new \beGateway\GetPaymentToken;
@@ -262,6 +264,7 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 		$transaction->setDeclineUrl($tc->get_confirmation_slug(true, $order_id));
 		$transaction->setFailUrl($tc->get_confirmation_slug(true, $order_id));
 		$transaction->setCancelUrl($tc->get_confirmation_slug(true, $order_id));
+		$transaction->setNotificationUrl($tc->get_confirmation_slug(true, $order_id));
 		//var_dump($shop_id.'-'.$shop_key.'-'.$order_id);
 		if (!isset($bgt_settings['personal_details']))
 			$transaction->setAddressHidden();
@@ -398,6 +401,10 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
         <?php
     }
 
+	
+	
+	
+	
     function ipn() {
         global $tc;
          
@@ -410,19 +417,32 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
 			  if (!class_exists('beGateway')) {
 			   require_once dirname(  __FILE__  ) . '/lib/beGateway.php';
 		     }
-			  
+			 // \beGateway\Settings::$shopId = 361;
+			  //\beGateway\Settings::$shopKey = 'b8647b68898b084b836474ed8d61ffe117c9a01168d867f24953b776ddcb134d';
+			  $log =  \beGateway\Logger::getInstance();
+			  $log->setOutputFile(require_once dirname(  __FILE__  )  .'/text.log');
+			  $log->write('ddddd');
 			  $webhook = new \beGateway\Webhook;
 
       if ($webhook->isAuthorized()) {
         //log
 		
        // if ( "yes" == $this->debug ){
-          $display="\n-------------------------------------------\n";
+          $display="\n--------------------autori-----------------------\n";
           $display.= "Order No: ".$webhook->getTrackingId();
           $display.= "\nUID: ".$webhook->getUid();
           $display.="\n--------------------------------------------\n";
           //$this->log->add( "begateway", $display  );
 		  var_dump($display);
+		  $order_id = $webhook->getTrackingId();
+		  var_dump('get_trakk'.\beGateway\Settings::$shopId);
+		 $order_id = tc_get_order_id_by_name($order_id);
+		 $order_id = $order_id->ID;
+	     $order = new TC_Order($order_id);
+		 if (!$order) {
+              var_dump('order not found');
+            }
+			
         //}
 
        // $this->process_order($webhook);
@@ -432,12 +452,14 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
           $display="\n----------- Unable to proceed --------------\n";
           $display.= "Order No: ".$webhook->getTrackingId();
           $display.="\n--------------------------------------------\n";
-          $this->log->add( "begateway", $display  );
+          //$this->log->add( "begateway", $display  );
+		  //$log->write($display);
 		  var_dump($display);
         //}
         wp_die( "beGateway Notify Failure" );
       }  
-			  
+	     
+		//$log->sendToFile($display);	  
 			  
          /*  
 		 
