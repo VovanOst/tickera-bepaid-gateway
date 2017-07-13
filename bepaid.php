@@ -16,7 +16,7 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
     var $currencies = array();
     var $automatically_activated = false;
     var $skip_payment_screen = true;
-
+     
     //Support for older payment gateway API
     function on_creation() {
         $this->init();
@@ -35,6 +35,8 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
         $this->API_Username = $this->get_option('sid', '', 'bepaid');
         $this->API_Password = $this->get_option('secret_word', '', 'bepaid');
         $this->SandboxFlag = $this->get_option('mode', 'sandbox', 'bepaid');
+		
+		
 
         $currencies = array(
             "AED" => __('AED - United Arab Emirates Dirham', 'tc'),
@@ -147,57 +149,13 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
             $url = 'checkout.begateway.com';
         }
 
+		
         $order_id = $tc->generate_order_id();
 
-        //$params = array();
-        //$params['total'] = $this->total();
-        //$params['sid'] = $this->API_Username;
-        //$params['cart_order_id'] = $order_id;
-        //$params['merchant_order_id'] = $order_id;
-        //$params['return_url'] = $tc->get_confirmation_slug(true, $order_id);
-        //$params['x_receipt_link_url'] = $tc->get_confirmation_slug(true, $order_id);
-        //$params['skip_landing'] = '1';
-        //$params['fixed'] = 'Y';
-        //$params['currency_code'] = $this->currency;
-        //$params['mode'] = '2CO';
-        //$params['card_holder_name'] = $this->buyer_info('full_name');
-       // $params['email'] = $this->buyer_info('email');
-
-        //if ($this->SandboxFlag == 'sandbox') {
-        //    $params['demo'] = 'Y';
-        //}
-
-        //$params["li_0_type"] = "product";
-        //$params["li_0_name"] = $this->cart_items();
-        //$params["li_0_price"] = $this->total();
-        //$params["li_0_tangible"] = 'N';
-
-        //$param_list = array();
-
-        //foreach ($params as $k => $v) {
-        //    $param_list[] = "{$k}=" . rawurlencode($v);
-        //}
-
-        //$param_str = implode('&', $param_list);
-
-        //$paid = false;
-
-        //$payment_info = $this->save_payment_info();
-
-        //$tc->create_order($order_id, $this->cart_contents(), $this->cart_info(), $payment_info, $paid);
-
-        //ob_start();
-       // @wp_redirect("{$url}?{$param_str}");
-        //tc_js_redirect("{$url}?{$param_str}");
-        //exit(0);
-		//check_ajax_referer( 'begateway-nonce', 'nonce' );
-        //$shop_key=$this->API_Username;
-		//var_dump($shop_key);
+        
 		
 		$bgt_settings = get_option('bgt_settings');
-        //$this->total();
-        //$amount = isset($_POST['amount']) ? $_POST['amount'] : '|';
-		//$amount = isset($this->total()) ? $this->total() : '|';
+       
 		$amount=$this->total();
 		list($dsc, $amount) = explode("|", $amount);
 
@@ -361,7 +319,7 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
         $hashSecretWord = $this->get_option('secret_word', '', 'bepaid'); //2Checkout Secret Word
         $hashSid = $this->get_option('sid', '', 'bepaid');
         $hashTotal = $total; //Sale total to validate against
-        $hashOrder = $_REQUEST['order_number']; //2Checkout Order Number
+        $hashOrder = $_REQUEST['order_number']; 
 		
 		if (!class_exists('beGateway')) {
 			require_once dirname(  __FILE__  ) . '/lib/beGateway.php';
@@ -443,8 +401,45 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
     function ipn() {
         global $tc;
          
-           
-           
+            if (isset($_GET['begateway']) && isset($_GET['uid']) &&   isset($_GET['oid'])){
+           //$this->child_transaction($_GET['begateway'], $_GET['uid'], $_GET['oid'], $_GET['amount'],$_GET['comment']);
+		   var_dump('ipnbegateway');
+            exit();
+			
+              }
+			  if (!class_exists('beGateway')) {
+			   require_once dirname(  __FILE__  ) . '/lib/beGateway.php';
+		     }
+			  
+			  $webhook = new \beGateway\Webhook;
+
+      if ($webhook->isAuthorized()) {
+        //log
+		
+       // if ( "yes" == $this->debug ){
+          $display="\n-------------------------------------------\n";
+          $display.= "Order No: ".$webhook->getTrackingId();
+          $display.= "\nUID: ".$webhook->getUid();
+          $display.="\n--------------------------------------------\n";
+          //$this->log->add( "begateway", $display  );
+		  var_dump($display);
+        //}
+
+       // $this->process_order($webhook);
+
+      } else {
+       // if ( "yes" == $this->debug ){
+          $display="\n----------- Unable to proceed --------------\n";
+          $display.= "Order No: ".$webhook->getTrackingId();
+          $display.="\n--------------------------------------------\n";
+          $this->log->add( "begateway", $display  );
+		  var_dump($display);
+        //}
+        wp_die( "beGateway Notify Failure" );
+      }  
+			  
+			  
+         /*  
 		 
        // if (isset($_REQUEST['message_type']) && $_REQUEST['message_type'] == 'INVOICE_STATUS_CHANGED') {
 		   if (isset($_REQUEST['uid'])) {
@@ -524,7 +519,7 @@ class TC_Gateway_BePaid extends TC_Gateway_API {
                 echo 'Fraudulent order detected and changed status.';
                 exit;
             }
-        }
+        }*/
     }
 
 }
